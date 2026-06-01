@@ -183,7 +183,7 @@ table.att td.emp-name { text-align:left; font-weight:500; font-size:12px; color:
     <div class="legend">
       <div class="legend-item"><div class="legend-dot" style="background:var(--green-bg);border:0.5px solid var(--green-brd);"></div>Present</div>
       <div class="legend-item"><div class="legend-dot" style="background:var(--blue-bg);border:0.5px solid var(--blue-brd);"></div>Remote</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--amber-bg);border:0.5px solid var(--amber-brd);"></div>Justified</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber-bg);border:0.5px solid var(--amber-brd);"></div>PTO</div>
       <div class="legend-item"><div class="legend-dot" style="background:var(--red-bg);border:0.5px solid var(--red-brd);"></div>Absent</div>
       <div class="legend-item"><div class="legend-dot" style="background:var(--bg2);border:0.5px solid var(--brd);"></div>Not marked</div>
       <span style="font-size:11px;color:var(--txt3);margin-left:4px;">· Click to cycle</span>
@@ -425,7 +425,7 @@ function renderRegistro() {
 
   let wRow = '<tr><th class="emp-col">Employee</th>';
   weeks.forEach(w => { wRow += `<th colspan="${w.days.length}" class="week-sep" style="font-size:10px;color:var(--txt3);">Wk ${w.wn}</th>`; });
-  wRow += '<th style="border-left:1px solid var(--brd2);font-size:10px;" title="Present">P</th><th style="font-size:10px;" title="Remote">R</th><th style="font-size:10px;" title="Total">Tot</th></tr>';
+  wRow += '<th style="border-left:1px solid var(--brd2);font-size:10px;" title="Present">P</th><th style="font-size:10px;" title="Remote">R</th><th style="font-size:10px;" title="Present only (PTO excluded)">Tot</th></tr>';
 
   let dRow = '<tr><th class="emp-col"></th>';
   weeks.forEach(w => {
@@ -449,7 +449,7 @@ function renderRegistro() {
         const st = att[ds] || 'none';
         if (st==='presente') pres++;
         if (st==='remoto')   rem++;
-        const lbl = st==='presente'?'✓':st==='ausente'?'✗':st==='justificado'?'J':st==='remoto'?'R':'·';
+        const lbl = st==='presente'?'✓':st==='ausente'?'✗':st==='justificado'?'PTO':st==='remoto'?'R':'·';
         row += `<td${i===0?' class="week-sep"':''}><button class="cell-btn ${st==='none'?'':st}" onclick="cycleCell('${esc(emp)}','${ds}')">${lbl}</button></td>`;
       });
     });
@@ -484,7 +484,7 @@ function renderOverview() {
       else if (st==='ausente')     { ausen++; ausDays.push(d); }
       else if (st==='justificado') { just++;  ausDays.push(d); }
     });
-    const total    = pres+just;
+    const total    = pres;
     const pct      = Math.round((total/empT)*100);
     const col      = COLORS[idx % COLORS.length];
     const barCol   = total>=empT?'var(--green)':total>=Math.round(empT*0.7)?'var(--amber)':'var(--red)';
@@ -513,11 +513,11 @@ function renderOverview() {
       <div class="stats-row">
         <div class="stat-box"><div class="stat-num" style="color:var(--green);">${pres}</div><div class="stat-label">Present</div></div>
         <div class="stat-box"><div class="stat-num" style="color:var(--blue);">${rem}</div><div class="stat-label">Remote</div></div>
-        <div class="stat-box"><div class="stat-num" style="color:var(--amber);">${just}</div><div class="stat-label">Justified</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--amber);">${just}</div><div class="stat-label">PTO</div></div>
         <div class="stat-box"><div class="stat-num" style="color:var(--red);">${ausen}</div><div class="stat-label">Absent</div></div>
       </div>
       <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(pct,100)}%;background:${barCol};"></div></div>
-      <div class="pct-label"><span>Office attendance: <strong>${pct}%</strong></span><span>${total}/${empT} days</span></div>
+      <div class="pct-label"><span>Office attendance: <strong>${pct}%</strong></span><span>${pres}/${empT} days</span></div>
       ${ausDays.length>0?`<div style="margin-top:7px;font-size:11px;color:var(--txt2);">Absences: ${ausTxt}</div>`:''}
       ${jHTML}
       <div class="justif-section">
@@ -626,7 +626,7 @@ function renderPerfiles() {
           if (st==='presente') pres++; else if (st==='remoto') rem++;
           else if (st==='ausente') ausen++; else if (st==='justificado') just++;
         });
-        const total = pres+just;
+        const total = pres;
         const pct   = Math.round((total/empT)*100);
         const pctCol = total>=empT?'var(--green)':total>=Math.round(empT*0.7)?'var(--amber)':'var(--red)';
         const pctBg  = total>=empT?'var(--green-bg)':total>=Math.round(empT*0.7)?'var(--amber-bg)':'var(--red-bg)';
@@ -891,7 +891,7 @@ window.runImport = () => {
   if (wrongMonth>0) html += `<div class="result-box result-muted">📅 ${wrongMonth} rows skipped — date not in ${MONTHS[state.currentMonth]} ${state.currentYear}</div>`;
   if (skipped>0)    html += `<div class="result-box result-muted">⚠ ${skipped} rows skipped (bad date or no name match)</div>`;
   if (unmatched.size>0) html += `<div class="result-box result-amber">🔍 Names not found in employee list:<br><span style="font-size:11px;">${[...unmatched].join(', ')}</span><br><span style="font-size:11px;margin-top:4px;display:block;">Tip: make sure employee names in the app match the names in the CSV.</span></div>`;
-  html += `<p style="font-size:12px;color:var(--txt2);margin-top:8px;">Existing states (Remote, Justified) were not overwritten.</p>`;
+  html += `<p style="font-size:12px;color:var(--txt2);margin-top:8px;">Existing states (Remote, PTO) were not overwritten.</p>`;
 
   document.getElementById('imp-results').innerHTML = html;
   document.getElementById('imp-s2').style.display = 'none';
@@ -910,16 +910,16 @@ window.exportExcel = () => {
   const wkRow=[''];
   days.forEach(d=>{ const wn=weekNum(d); wkRow.push(wn!==lastWk?`Week ${wn}`:''); lastWk=wn; });
   wkRow.push('','','','','');
-  const hdr1=['Employee',...days.map(d=>`${WD[d.getDay()-1]} ${d.getDate()}`),'Present','Remote','Justified','Absent','Total (P+J)','% vs Target'];
+  const hdr1=['Employee',...days.map(d=>`${WD[d.getDay()-1]} ${d.getDate()}`),'Present','Remote','PTO','Absent','Total (P only)','% vs Target'];
   const data1=state.employees.map(emp=>{
     const T=state.targets[emp]||12, att=((state.attendance[mkey]||{})[emp])||{};
     let p=0,r=0,j=0,a=0;
     const dc=days.map(d=>{
       const st=att[d.toISOString().slice(0,10)]||'';
       if(st==='presente')p++; else if(st==='remoto')r++; else if(st==='justificado')j++; else if(st==='ausente')a++;
-      return {presente:'Present',remoto:'Remote',justificado:'Justified',ausente:'Absent','':''}[st]||'';
+      return {presente:'Present',remoto:'Remote',justificado:'PTO',ausente:'Absent','':''}[st]||'';
     });
-    return [emp,...dc,p,r,j,a,p+j,T>0?Math.round(((p+j)/T)*100)+'%':'-'];
+    return [emp,...dc,p,r,j,a,p,T>0?Math.round((p/T)*100)+'%':'-'];
   });
   const ws1=XLSX.utils.aoa_to_sheet([wkRow,hdr1,...data1]);
   ws1['!cols']=[{wch:22},...days.map(()=>({wch:8})),{wch:9},{wch:9},{wch:11},{wch:9},{wch:13},{wch:13}];
@@ -927,7 +927,7 @@ window.exportExcel = () => {
 
   // Sheet 2: summary with justifications
   const srows=[[`Monthly Summary — ${monthLabel}`],[]];
-  srows.push(['Employee','Target','Present','Remote','Justified','Absent','Total (P+J)','% Attendance','Met Target?','Agreed Days','Schedule']);
+  srows.push(['Employee','Target','Present','Remote','PTO','Absent','Total (P only)','% Attendance','Met Target?','Agreed Days','Schedule']);
   state.employees.forEach(emp=>{
     const T=state.targets[emp]||12, att=((state.attendance[mkey]||{})[emp])||{}, justifs=((state.justifications[mkey]||{})[emp])||[], sc=state.schedule[emp]||{};
     let p=0,r=0,j=0,a=0;
@@ -937,14 +937,14 @@ window.exportExcel = () => {
       else if(st==='ausente'){a++;absDays.push(d);}
       else if(st==='justificado'){j++;absDays.push(d);}
     });
-    const tot=p+j, pct=T>0?Math.round((tot/T)*100)+'%':'-';
+    const tot=p, pct=T>0?Math.round((tot/T)*100)+'%':'-';
     const agreed=(sc.days||[]).filter(d=>['Mon','Tue','Wed','Thu','Fri'].includes(d)).join(', ')||'-';
     const sched=sc.timeStart&&sc.timeEnd?`${sc.timeStart} – ${sc.timeEnd}`:'-';
     srows.push([emp,T,p,r,j,a,tot,pct,tot>=T?'YES ✓':'NO ✗',agreed,sched]);
     if(absDays.length>0){
       srows.push(['','Date','Status','Justification','Made up?','','','','','','']);
       absDays.forEach(d=>{
-        const ds=d.toISOString().slice(0,10), st=att[ds], lbl=st==='justificado'?'Justified':'Absent';
+        const ds=d.toISOString().slice(0,10), st=att[ds], lbl=st==='justificado'?'PTO':'Absent';
         const dayStr=`${WD[d.getDay()-1]} ${d.getDate()}`;
         const match=justifs.find(jj=>jj.date&&(jj.date.includes(String(d.getDate()))||jj.date===dayStr));
         srows.push(['',dayStr,lbl,match?match.motivo:'-',match?(match.recupero?'Yes':'No'):'-','','','','','','']);
@@ -964,4 +964,6 @@ window.startApp = startListener;
 </script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </body>
+</html>
+
 </html>
